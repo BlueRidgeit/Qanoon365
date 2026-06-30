@@ -3,16 +3,17 @@ name: Deploy Qanoon365 to Azure Container Apps
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
 
 env:
-  ACR_NAME: albasticr
-  RESOURCE_GROUP: rg-albasti-dev
-  API_APP: qanoon365-api-dev
-  WEB_APP: qanoon365-web-dev
+  ACR_NAME: qanoon365acr
+  RESOURCE_GROUP: Qanoon365
+  API_APP: qanoon365-api
+  WEB_APP: qanoon365-web
 
 jobs:
   deploy:
@@ -36,7 +37,7 @@ jobs:
           if [ -n "$API_FQDN" ]; then
             echo "API_URL=https://${API_FQDN}/api" >> "$GITHUB_ENV"
           else
-            echo "API_URL=https://qanoon365-api-dev.placeholder.azurecontainerapps.io/api" >> "$GITHUB_ENV"
+            echo "API_URL=https://qanoon365-api.placeholder.azurecontainerapps.io/api" >> "$GITHUB_ENV"
           fi
 
       - name: Build API image
