@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <rect width="40" height="40" rx="8" fill="rgba(255,255,255,0.1)"/>
+  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="16">
+    <tspan fill="#f7941f">Q</tspan><tspan fill="white">3</tspan>
+  </text>
+</svg>

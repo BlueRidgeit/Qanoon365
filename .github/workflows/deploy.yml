@@ -1,0 +1,85 @@
+name: Deploy Qanoon365 to Azure Container Apps
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ACR_NAME: albasticr
+  RESOURCE_GROUP: rg-albasti-dev
+  API_APP: qanoon365-api-dev
+  WEB_APP: qanoon365-web-dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set image tag
+        run: echo "TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Get API FQDN
+        run: |
+          API_FQDN=$(az containerapp show --name $API_APP --resource-group $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv 2>/dev/null || echo "")
+          if [ -n "$API_FQDN" ]; then
+            echo "API_URL=https://${API_FQDN}/api" >> "$GITHUB_ENV"
+          else
+            echo "API_URL=https://qanoon365-api-dev.placeholder.azurecontainerapps.io/api" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build API image
+        run: |
+          az acr build --registry $ACR_NAME \
+            --image qanoon365-api:${{ env.TAG }} \
+            --image qanoon365-api:latest \
+            --file packages/api/Dockerfile .
+
+      - name: Build Web image
+        run: |
+          az acr build --registry $ACR_NAME \
+            --image qanoon365-web:${{ env.TAG }} \
+            --image qanoon365-web:latest \
+            --file packages/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL="${{ env.API_URL }}" .
+
+      - name: Deploy API container
+        run: |
+          az containerapp update \
+            --resource-group $RESOURCE_GROUP \
+            --name $API_APP \
+            --image $ACR_NAME.azurecr.io/qanoon365-api:${{ env.TAG }}
+
+      - name: Deploy Web container
+        run: |
+          az containerapp update \
+            --resource-group $RESOURCE_GROUP \
+            --name $WEB_APP \
+            --image $ACR_NAME.azurecr.io/qanoon365-web:${{ env.TAG }}
+
+      - name: Verify deployment
+        run: |
+          sleep 30
+          API_FQDN=$(az containerapp show --name $API_APP --resource-group $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
+          WEB_FQDN=$(az containerapp show --name $WEB_APP --resource-group $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
+          API_HEALTH=$(curl -sf -o /dev/null -w "%{http_code}" "https://${API_FQDN}/health" || echo "000")
+          WEB_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "https://${WEB_FQDN}/" || echo "000")
+          echo "API health: $API_HEALTH (https://${API_FQDN})"
+          echo "Web status: $WEB_STATUS (https://${WEB_FQDN})"
+          if [ "$API_HEALTH" != "200" ]; then
+            echo "::warning::API health check returned $API_HEALTH"
+          fi
+          if [ "$WEB_STATUS" != "200" ]; then
+            echo "::warning::Web returned $WEB_STATUS"
+          fi

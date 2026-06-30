@@ -1,0 +1,31 @@
+node_modules/
+dist/
+.next/
+.env.local
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+coverage/
+.turbo/
+*.tsbuildinfo
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
+
+# Brainstorming visual companion
+.superpowers/
+
+# Test screenshots
+screenshots/
+
+# Internal docs (kept locally, not on GitHub)
+docs/
+!docs/
+docs/*
+!docs/qanoon/
+!docs/qanoon/*.md
+AGENTS.md
+eval/

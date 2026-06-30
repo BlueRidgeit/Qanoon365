@@ -1,0 +1,9 @@
+node_modules
+packages/*/node_modules
+.git
+.next
+packages/web/.next
+packages/api/dist
+*.md
+.env*
+!.env.example

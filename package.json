@@ -1,0 +1,32 @@
+{
+  "name": "albasti",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "packages/api",
+    "packages/web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w packages/api\" \"npm run dev -w packages/web\"",
+    "build": "npm run build -w packages/shared && npm run build -w packages/api && npm run build -w packages/web",
+    "typecheck": "npm run typecheck -w packages/shared && npm run typecheck -w packages/api && npm run typecheck -w packages/web",
+    "lint": "npm run lint -w packages/api && npm run lint -w packages/web",
+    "test:e2e:ui:prepare": "node playwright/prepare.mjs",
+    "test:e2e:ui": "npm run test:e2e:ui:prepare && playwright test",
+    "test:e2e:ui:headed": "npm run test:e2e:ui:prepare && playwright test --headed",
+    "test:e2e:ui:debug": "npm run test:e2e:ui:prepare && playwright test --debug",
+    "db:migrate": "npm run prisma:migrate -w packages/api",
+    "db:seed": "npm run prisma:seed -w packages/api",
+    "db:studio": "npm run prisma:studio -w packages/api"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.2.3",
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

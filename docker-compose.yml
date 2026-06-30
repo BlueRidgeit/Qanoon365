@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: albasti-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: albasti
+      POSTGRES_PASSWORD: albasti_dev
+      POSTGRES_DB: albasti
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/init-extensions.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: albasti-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: albasti-azurite
+    restart: unless-stopped
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --skipApiVersionCheck
+    ports:
+      - "10000:10000"  # Blob
+      - "10001:10001"  # Queue
+      - "10002:10002"  # Table
+    volumes:
+      - azuritedata:/data
+
+volumes:
+  pgdata:
+  redisdata:
+  azuritedata:

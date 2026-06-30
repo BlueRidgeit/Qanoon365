@@ -1,0 +1,818 @@
+// ─────────────────────────────────────────────────────────────
+// AlBasti – Prisma Schema
+// Public schema: tenants, court data, platform config
+// Tenant schema: all CRM entities (dynamically set via search_path)
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "tenant_default"]
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PUBLIC SCHEMA – shared across all tenants
+// ═══════════════════════════════════════════════════════════════
+
+model Tenant {
+  id        String   @id @db.VarChar(50)
+  name      String   @db.VarChar(255)
+  slug      String   @unique @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tenants")
+  @@schema("public")
+}
+
+model CourtCase {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  caseNumber      String    @map("case_number") @db.VarChar(100)
+  filingDate      DateTime? @map("filing_date") @db.Date
+  court           String?   @db.VarChar(255)
+  jurisdiction    String?   @db.VarChar(100)
+  caseType        String?   @map("case_type") @db.VarChar(100)
+  subjectMatter   String?   @map("subject_matter")
+  outcome         String?   @db.VarChar(100)
+  outcomeDate     DateTime? @map("outcome_date") @db.Date
+  durationDays    Int?      @map("duration_days")
+  notes           String?
+  rawDocumentPath String?   @map("raw_document_path") @db.VarChar(500)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  parties CourtCaseParty[]
+
+  @@map("court_cases")
+  @@schema("public")
+}
+
+model CourtParty {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String   @db.VarChar(255)
+  nameNormalized String?  @map("name_normalized") @db.VarChar(255)
+  nameArabic     String?  @map("name_arabic") @db.VarChar(255)
+  partyType      String   @map("party_type") @db.VarChar(20)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  cases CourtCaseParty[]
+
+  @@map("court_parties")
+  @@schema("public")
+}
+
+model CourtCaseParty {
+  courtCaseId        String  @map("court_case_id") @db.Uuid
+  courtPartyId       String  @map("court_party_id") @db.Uuid
+  role               String  @db.VarChar(20)
+  representingFirm   String? @map("representing_firm") @db.VarChar(255)
+  representingLawyer String? @map("representing_lawyer") @db.VarChar(255)
+  outcomeForParty    String? @map("outcome_for_party") @db.VarChar(100)
+
+  courtCase  CourtCase  @relation(fields: [courtCaseId], references: [id])
+  courtParty CourtParty @relation(fields: [courtPartyId], references: [id])
+
+  @@id([courtCaseId, courtPartyId])
+  @@map("court_case_parties")
+  @@schema("public")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TENANT SCHEMA – per-tenant CRM data
+// In production, each tenant gets its own schema (tenant_{id}).
+// For Prisma migrations we use "tenant_default" as the template.
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  firstName    String    @map("first_name") @db.VarChar(100)
+  lastName     String    @map("last_name") @db.VarChar(100)
+  role         String    @db.VarChar(20)
+  tenantId     String    @map("tenant_id") @db.VarChar(50)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("users")
+  @@schema("tenant_default")
+}
+
+model Client {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String    @db.VarChar(255)
+  clientType         String    @map("client_type") @db.VarChar(30)
+  registrationNumber String?   @map("registration_number") @db.VarChar(100)
+  industry           String?   @db.VarChar(100)
+  preferredLanguage  String    @default("english") @map("preferred_language") @db.VarChar(10)
+  kycStatus          String    @default("not_started") @map("kyc_status") @db.VarChar(30)
+  kycExpiryDate      DateTime? @map("kyc_expiry_date") @db.Date
+  riskRating         String?   @map("risk_rating") @db.VarChar(10)
+  notes              String?
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  createdBy          String?   @map("created_by") @db.Uuid
+  updatedBy          String?   @map("updated_by") @db.Uuid
+
+  contacts      Contact[]
+  opportunities Opportunity[]
+  matters       Matter[]
+  kycRecords    KycRecord[]
+  invoices      Invoice[]
+
+  @@map("clients")
+  @@schema("tenant_default")
+}
+
+model Contact {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId  String   @map("client_id") @db.Uuid
+  firstName String   @map("first_name") @db.VarChar(100)
+  lastName  String   @map("last_name") @db.VarChar(100)
+  email     String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  jobTitle  String?  @map("job_title") @db.VarChar(100)
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy String?  @map("created_by") @db.Uuid
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@map("contacts")
+  @@schema("tenant_default")
+}
+
+model Lead {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subject                String   @db.VarChar(255)
+  caseType               String   @map("case_type") @db.VarChar(30)
+  jurisdiction           String   @db.VarChar(30)
+  urgency                String   @db.VarChar(15)
+  caseSummary            String   @map("case_summary")
+  clientName             String?  @map("client_name") @db.VarChar(255)
+  clientType             String?  @map("client_type") @db.VarChar(30)
+  opposingPartyNames     String?  @map("opposing_party_names")
+  estimatedValue         Decimal? @map("estimated_value") @db.Decimal(15, 2)
+  referralSource         String?  @map("referral_source") @db.VarChar(100)
+  courtIntelFlag         Boolean  @default(false) @map("court_intel_flag")
+  status                 String   @default("new") @db.VarChar(20)
+  assignedTo             String?  @map("assigned_to") @db.Uuid
+  convertedOpportunityId String?  @map("converted_opportunity_id") @db.Uuid
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  createdBy              String?  @map("created_by") @db.Uuid
+  updatedBy              String?  @map("updated_by") @db.Uuid
+
+  opportunity Opportunity? @relation(fields: [convertedOpportunityId], references: [id])
+
+  @@map("leads")
+  @@schema("tenant_default")
+}
+
+model Opportunity {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId                  String?   @map("lead_id") @db.Uuid
+  clientId                String    @map("client_id") @db.Uuid
+  name                    String    @db.VarChar(255)
+  stage                   String    @default("inquiry") @db.VarChar(20)
+  conflictCheckStatus     String    @default("not_started") @map("conflict_check_status") @db.VarChar(30)
+  conflictApprovedBy      String?   @map("conflict_approved_by") @db.Uuid
+  conflictResolutionNotes String?   @map("conflict_resolution_notes")
+  kycStatus               String    @default("not_started") @map("kyc_status") @db.VarChar(30)
+  practiceArea            String    @map("practice_area") @db.VarChar(30)
+  engagementType          String?   @map("engagement_type") @db.VarChar(20)
+  assignedPartner         String    @map("assigned_partner") @db.Uuid
+  estimatedValue          Decimal?  @map("estimated_value") @db.Decimal(15, 2)
+  courtIntelSummary       String?   @map("court_intel_summary")
+  riskScore               String?   @map("risk_score") @db.VarChar(10)
+  closedAt                DateTime? @map("closed_at")
+  closeReason             String?   @map("close_reason")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  createdBy               String?   @map("created_by") @db.Uuid
+  updatedBy               String?   @map("updated_by") @db.Uuid
+
+  client          Client           @relation(fields: [clientId], references: [id])
+  leads           Lead[]
+  conflictRecords ConflictRecord[]
+  matters         Matter[]
+
+  @@map("opportunities")
+  @@schema("tenant_default")
+}
+
+model Matter {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterNumber     String    @unique @map("matter_number") @db.VarChar(20)
+  name             String    @db.VarChar(255)
+  clientId         String    @map("client_id") @db.Uuid
+  opportunityId    String?   @map("opportunity_id") @db.Uuid
+  status           String    @default("active") @db.VarChar(15)
+  practiceArea     String?   @map("practice_area") @db.VarChar(30)
+  leadPartner      String    @map("lead_partner") @db.Uuid
+  openDate         DateTime  @default(now()) @map("open_date") @db.Date
+  targetCloseDate  DateTime? @map("target_close_date") @db.Date
+  courtIntelContext String?  @map("court_intel_context")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  createdBy        String?   @map("created_by") @db.Uuid
+  updatedBy        String?   @map("updated_by") @db.Uuid
+
+  client          Client           @relation(fields: [clientId], references: [id])
+  opportunity     Opportunity?     @relation(fields: [opportunityId], references: [id])
+  timeEntries     TimeEntry[]
+  invoices        Invoice[]
+  courtHearings   CourtHearing[]
+  courtDeadlines  CourtDeadline[]
+  appealDeadlines AppealDeadline[]
+
+  @@map("matters")
+  @@schema("tenant_default")
+}
+
+model ConflictRecord {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  opportunityId      String    @map("opportunity_id") @db.Uuid
+  matchedEntityType  String    @map("matched_entity_type") @db.VarChar(20)
+  matchedEntityId    String    @map("matched_entity_id") @db.Uuid
+  matchSource        String    @map("match_source") @db.VarChar(20)
+  matchConfidence    String    @map("match_confidence") @db.VarChar(10)
+  confidenceScore    Decimal?  @map("confidence_score") @db.Decimal(3, 2)
+  matchField         String?   @map("match_field") @db.VarChar(100)
+  relationshipPath   String?   @map("relationship_path")
+  courtCaseReference String?   @map("court_case_reference")
+  relatedMatterId    String?   @map("related_matter_id") @db.Uuid
+  resolutionStatus   String    @default("pending") @map("resolution_status") @db.VarChar(25)
+  resolvedBy         String?   @map("resolved_by") @db.Uuid
+  resolutionNotes    String?   @map("resolution_notes")
+  resolvedAt         DateTime? @map("resolved_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id])
+
+  @@map("conflict_records")
+  @@schema("tenant_default")
+}
+
+model KycRecord {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clientId           String    @map("client_id") @db.Uuid
+  verificationType   String    @map("verification_type") @db.VarChar(30)
+  status             String    @default("not_started") @db.VarChar(30)
+  idDocumentType     String?   @map("id_document_type") @db.VarChar(40)
+  idDocumentNumber   String?   @map("id_document_number") @db.VarChar(100)
+  idExpiryDate       DateTime? @map("id_expiry_date") @db.Date
+  verificationDate   DateTime? @map("verification_date") @db.Date
+  verifiedBy         String?   @map("verified_by") @db.Uuid
+  riskRating         String?   @map("risk_rating") @db.VarChar(10)
+  notes              String?
+  documentFolderPath String?   @map("document_folder_path") @db.VarChar(500)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  createdBy          String?   @map("created_by") @db.Uuid
+  updatedBy          String?   @map("updated_by") @db.Uuid
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@map("kyc_records")
+  @@schema("tenant_default")
+}
+
+model OpposingParty {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String   @db.VarChar(255)
+  nameNormalized String?  @map("name_normalized") @db.VarChar(255)
+  nameArabic     String?  @map("name_arabic") @db.VarChar(255)
+  partyType      String?  @map("party_type") @db.VarChar(20)
+  matterId       String?  @map("matter_id") @db.Uuid
+  opportunityId  String?  @map("opportunity_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("opposing_parties")
+  @@schema("tenant_default")
+}
+
+model Document {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType       String   @map("entity_type") @db.VarChar(20)
+  entityId         String   @map("entity_id") @db.Uuid
+  fileName         String   @map("file_name") @db.VarChar(255)
+  blobPath         String   @map("blob_path") @db.VarChar(500)
+  fileSizeBytes    BigInt   @map("file_size_bytes")
+  contentType      String   @map("content_type") @db.VarChar(100)
+  documentCategory String   @map("document_category") @db.VarChar(30)
+  uploadedBy       String   @map("uploaded_by") @db.Uuid
+  version          Int      @default(1)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("documents")
+  @@schema("tenant_default")
+}
+
+model Activity {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType        String   @map("entity_type") @db.VarChar(20)
+  entityId          String   @map("entity_id") @db.Uuid
+  activityType      String   @map("activity_type") @db.VarChar(20)
+  subject           String   @db.VarChar(255)
+  body              String?
+  activityDate      DateTime @map("activity_date")
+  completedBy       String?  @map("completed_by") @db.Uuid
+  isSystemGenerated Boolean  @default(false) @map("is_system_generated")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("activities")
+  @@schema("tenant_default")
+}
+
+model CourtIntelQuery {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  queryType        String   @map("query_type") @db.VarChar(30)
+  sourceEntityType String?  @map("source_entity_type") @db.VarChar(20)
+  sourceEntityId   String?  @map("source_entity_id") @db.Uuid
+  queryInput       Json?    @map("query_input")
+  resultSummary    String?  @map("result_summary")
+  resultData       Json?    @map("result_data")
+  executedAt       DateTime @default(now()) @map("executed_at")
+  executedBy       String   @map("executed_by") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("court_intel_queries")
+  @@schema("tenant_default")
+}
+
+model Notification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  title      String    @db.VarChar(255)
+  body       String
+  entityType String?   @map("entity_type") @db.VarChar(20)
+  entityId   String?   @map("entity_id") @db.Uuid
+  isRead     Boolean   @default(false) @map("is_read")
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@map("notifications")
+  @@schema("tenant_default")
+}
+
+model TimeEntry {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId        String    @map("matter_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  entryDate       DateTime  @map("entry_date") @db.Date
+  durationMinutes Int       @map("duration_minutes")
+  briefNote       String    @map("brief_note") @db.VarChar(500)
+  narrative       String?
+  activityType    String    @map("activity_type") @db.VarChar(30)
+  billingRateId   String?   @map("billing_rate_id") @db.Uuid
+  rateAmount      Decimal?  @map("rate_amount") @db.Decimal(10, 2)
+  totalAmount     Decimal?  @map("total_amount") @db.Decimal(12, 2)
+  isBillable      Boolean   @default(true) @map("is_billable")
+  isBilled        Boolean   @default(false) @map("is_billed")
+  invoiceId       String?   @map("invoice_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  matter      Matter       @relation(fields: [matterId], references: [id])
+  billingRate BillingRate? @relation(fields: [billingRateId], references: [id])
+  invoice     Invoice?     @relation(fields: [invoiceId], references: [id])
+
+  @@map("time_entries")
+  @@schema("tenant_default")
+}
+
+model BillingRate {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String?   @map("user_id") @db.Uuid
+  role          String?   @db.VarChar(20)
+  practiceArea  String?   @map("practice_area") @db.VarChar(30)
+  hourlyRate    Decimal   @map("hourly_rate") @db.Decimal(10, 2)
+  currency      String    @default("AED") @db.VarChar(3)
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdBy     String?   @map("created_by") @db.Uuid
+  updatedBy     String?   @map("updated_by") @db.Uuid
+
+  timeEntries TimeEntry[]
+
+  @@map("billing_rates")
+  @@schema("tenant_default")
+}
+
+model Invoice {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoiceNumber String    @unique @map("invoice_number") @db.VarChar(30)
+  matterId      String    @map("matter_id") @db.Uuid
+  clientId      String    @map("client_id") @db.Uuid
+  status        String    @default("draft") @db.VarChar(20)
+  subtotal      Decimal   @db.Decimal(12, 2)
+  vatRate       Decimal   @default(0.05) @map("vat_rate") @db.Decimal(5, 4)
+  vatAmount     Decimal   @map("vat_amount") @db.Decimal(12, 2)
+  totalAmount   Decimal   @map("total_amount") @db.Decimal(12, 2)
+  currency      String    @default("AED") @db.VarChar(3)
+  issuedDate    DateTime? @map("issued_date") @db.Date
+  dueDate       DateTime? @map("due_date") @db.Date
+  paidDate      DateTime? @map("paid_date") @db.Date
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdBy     String?   @map("created_by") @db.Uuid
+  updatedBy     String?   @map("updated_by") @db.Uuid
+
+  matter      Matter      @relation(fields: [matterId], references: [id])
+  client      Client      @relation(fields: [clientId], references: [id])
+  timeEntries TimeEntry[]
+
+  @@map("invoices")
+  @@schema("tenant_default")
+}
+
+model CourtHearing {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId        String    @map("matter_id") @db.Uuid
+  eventType       String    @map("event_type") @db.VarChar(30)
+  title           String    @db.VarChar(255)
+  description     String?
+  court           String?   @db.VarChar(255)
+  courtRoom       String?   @map("court_room") @db.VarChar(100)
+  judge           String?   @db.VarChar(255)
+  caseNumber      String?   @map("case_number") @db.VarChar(100)
+  scheduledDate   DateTime  @map("scheduled_date")
+  scheduledEndDate DateTime? @map("scheduled_end_date")
+  location        String?   @db.VarChar(255)
+  status          String    @default("scheduled") @db.VarChar(20)
+  outcome         String?
+  reminderDays    Int       @default(3) @map("reminder_days")
+  assignedTo      String?   @map("assigned_to") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  matter Matter @relation(fields: [matterId], references: [id])
+
+  @@map("court_hearings")
+  @@schema("tenant_default")
+}
+
+model CourtDeadline {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId        String    @map("matter_id") @db.Uuid
+  deadlineType    String    @map("deadline_type") @db.VarChar(30)
+  title           String    @db.VarChar(255)
+  description     String?
+  dueDate         DateTime  @map("due_date")
+  status          String    @default("pending") @db.VarChar(20)
+  priority        String    @default("normal") @db.VarChar(15)
+  completedAt     DateTime? @map("completed_at")
+  completedBy     String?   @map("completed_by") @db.Uuid
+  assignedTo      String?   @map("assigned_to") @db.Uuid
+  reminderDays    Int       @default(3) @map("reminder_days")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  matter Matter @relation(fields: [matterId], references: [id])
+
+  @@map("court_deadlines")
+  @@schema("tenant_default")
+}
+
+model Task {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String    @db.VarChar(255)
+  description    String?
+  entityType     String?   @map("entity_type") @db.VarChar(20)
+  entityId       String?   @map("entity_id") @db.Uuid
+  status         String    @default("todo") @db.VarChar(20)
+  priority       String    @default("normal") @db.VarChar(15)
+  assignedTo     String?   @map("assigned_to") @db.Uuid
+  dueDate        DateTime? @map("due_date")
+  completedAt    DateTime? @map("completed_at")
+  completedBy    String?   @map("completed_by") @db.Uuid
+  tags           String?   @db.VarChar(500)
+  sortOrder      Int       @default(0) @map("sort_order")
+  taskType       String?   @map("task_type") @db.VarChar(30)
+  approvalStatus String?   @map("approval_status") @db.VarChar(20)
+  approvedBy     String?   @map("approved_by") @db.Uuid
+  approvedAt     DateTime? @map("approved_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by") @db.Uuid
+  updatedBy      String?   @map("updated_by") @db.Uuid
+
+  comments    TaskComment[]
+  attachments TaskAttachment[]
+
+  @@map("tasks")
+  @@schema("tenant_default")
+}
+
+// ── Enforcement & Complaints ────────────────────────────────
+
+model ExecutionFile {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fileNumber          String    @map("file_number") @db.VarChar(100)
+  caseNumber          String?   @map("case_number") @db.VarChar(100)
+  court               String    @db.VarChar(30)
+  status              String    @default("ongoing") @db.VarChar(20)
+  filingDate          DateTime  @map("filing_date") @db.Date
+  completionDate      DateTime? @map("completion_date") @db.Date
+  claimAmount         Decimal   @map("claim_amount") @db.Decimal(15, 2)
+  collectedAmount     Decimal   @default(0) @map("collected_amount") @db.Decimal(15, 2)
+  currency            String    @default("AED") @db.VarChar(3)
+  debtorName          String    @map("debtor_name") @db.VarChar(255)
+  debtorNameArabic    String?   @map("debtor_name_arabic") @db.VarChar(255)
+  creditorName        String    @map("creditor_name") @db.VarChar(255)
+  creditorNameArabic  String?   @map("creditor_name_arabic") @db.VarChar(255)
+  matterId            String?   @map("matter_id") @db.Uuid
+  clientId            String?   @map("client_id") @db.Uuid
+  assignedTo          String    @map("assigned_to") @db.Uuid
+  isStalled           Boolean   @default(false) @map("is_stalled")
+  lastActivityDate    DateTime  @default(now()) @map("last_activity_date")
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  createdBy           String?   @map("created_by") @db.Uuid
+  updatedBy           String?   @map("updated_by") @db.Uuid
+
+  followUpRule FollowUpRule?
+  followUpLogs FollowUpLog[]
+
+  @@map("execution_files")
+  @@schema("tenant_default")
+}
+
+model CriminalComplaint {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  complaintNumber       String    @map("complaint_number") @db.VarChar(100)
+  status                String    @default("new") @db.VarChar(30)
+  complaintType         String    @map("complaint_type") @db.VarChar(30)
+  court                 String    @db.VarChar(30)
+  complainantName       String    @map("complainant_name") @db.VarChar(255)
+  complainantNameArabic String?   @map("complainant_name_arabic") @db.VarChar(255)
+  respondentName        String    @map("respondent_name") @db.VarChar(255)
+  respondentNameArabic  String?   @map("respondent_name_arabic") @db.VarChar(255)
+  filedDate             DateTime  @map("filed_date") @db.Date
+  referralDate          DateTime? @map("referral_date") @db.Date
+  matterId              String?   @map("matter_id") @db.Uuid
+  clientId              String?   @map("client_id") @db.Uuid
+  assignedTo            String    @map("assigned_to") @db.Uuid
+  notes                 String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  createdBy             String?   @map("created_by") @db.Uuid
+  updatedBy             String?   @map("updated_by") @db.Uuid
+
+  @@map("criminal_complaints")
+  @@schema("tenant_default")
+}
+
+model CourtContact {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  court         String   @db.VarChar(30)
+  department    String?  @db.VarChar(255)
+  contactName   String?  @map("contact_name") @db.VarChar(255)
+  email         String   @db.VarChar(255)
+  phone         String?  @db.VarChar(50)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  followUpRules FollowUpRule[]
+
+  @@map("court_contacts")
+  @@schema("tenant_default")
+}
+
+model FollowUpRule {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  executionFileId  String   @unique @map("execution_file_id") @db.Uuid
+  intervalDays     Int      @default(14) @map("interval_days")
+  isActive         Boolean  @default(true) @map("is_active")
+  courtContactId   String   @map("court_contact_id") @db.Uuid
+  templateLanguage String   @default("both") @map("template_language") @db.VarChar(10)
+  nextFollowUpDate DateTime @map("next_follow_up_date")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  executionFile ExecutionFile @relation(fields: [executionFileId], references: [id])
+  courtContact  CourtContact  @relation(fields: [courtContactId], references: [id])
+
+  @@map("follow_up_rules")
+  @@schema("tenant_default")
+}
+
+model FollowUpLog {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  executionFileId String    @map("execution_file_id") @db.Uuid
+  status          String    @default("scheduled") @db.VarChar(20)
+  sentAt          DateTime? @map("sent_at")
+  recipientEmail  String    @map("recipient_email") @db.VarChar(255)
+  subject         String    @db.VarChar(500)
+  body            String
+  errorMessage    String?   @map("error_message")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  executionFile ExecutionFile @relation(fields: [executionFileId], references: [id])
+
+  @@map("follow_up_logs")
+  @@schema("tenant_default")
+}
+
+model TaskComment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  body      String
+  authorId  String   @map("author_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@map("task_comments")
+  @@schema("tenant_default")
+}
+
+model TaskAttachment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId      String   @map("task_id") @db.Uuid
+  fileName    String   @map("file_name") @db.VarChar(255)
+  blobPath    String   @map("blob_path") @db.VarChar(500)
+  contentType String?  @map("content_type") @db.VarChar(100)
+  uploadedBy  String   @map("uploaded_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@map("task_attachments")
+  @@schema("tenant_default")
+}
+
+model AppealDeadline {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId         String?   @map("matter_id") @db.Uuid
+  fileNumber       String?   @map("file_number") @db.VarChar(100)
+  caseNumber       String?   @map("case_number") @db.VarChar(100)
+  clientName       String?   @map("client_name") @db.VarChar(255)
+  clientNameArabic String?   @map("client_name_arabic") @db.VarChar(255)
+  court            String?   @db.VarChar(255)
+  judgmentDate     DateTime  @map("judgment_date") @db.Date
+  appealType       String    @map("appeal_type") @db.VarChar(30)
+  appealPeriodDays Int       @map("appeal_period_days")
+  deadlineDate     DateTime  @map("deadline_date") @db.Date
+  status           String    @default("upcoming") @db.VarChar(20)
+  filedDate        DateTime? @map("filed_date") @db.Date
+  assignedTo       String?   @map("assigned_to") @db.Uuid
+  reminderDays     Int       @default(7) @map("reminder_days")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  createdBy        String?   @map("created_by") @db.Uuid
+  updatedBy        String?   @map("updated_by") @db.Uuid
+
+  matter Matter? @relation(fields: [matterId], references: [id])
+
+  @@map("appeal_deadlines")
+  @@schema("tenant_default")
+}
+
+model ArchivedDocument {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title               String   @db.VarChar(255)
+  description         String?
+  category            String   @db.VarChar(30)
+  tags                String?  @db.VarChar(500)
+  content             String?
+  fileName            String   @map("file_name") @db.VarChar(255)
+  blobPath            String   @map("blob_path") @db.VarChar(500)
+  fileSizeBytes       BigInt?  @map("file_size_bytes")
+  contentType         String?  @map("content_type") @db.VarChar(100)
+  court               String?  @db.VarChar(255)
+  caseNumber          String?  @map("case_number") @db.VarChar(100)
+  caseStage           String?  @map("case_stage") @db.VarChar(30)
+  archiveDate         DateTime @default(now()) @map("archive_date") @db.Date
+  clientId            String?  @map("client_id") @db.Uuid
+  matterId            String?  @map("matter_id") @db.Uuid
+  isClassified        Boolean  @default(false) @map("is_classified")
+  classificationLabel String?  @map("classification_label") @db.VarChar(100)
+  uploadedBy          String   @map("uploaded_by") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("archived_documents")
+  @@schema("tenant_default")
+}
+
+model PowerOfAttorney {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  poaNumber           String    @map("poa_number") @db.VarChar(100)
+  clientId            String?   @map("client_id") @db.Uuid
+  matterId            String?   @map("matter_id") @db.Uuid
+  grantorName         String    @map("grantor_name") @db.VarChar(255)
+  grantorNameArabic   String?   @map("grantor_name_arabic") @db.VarChar(255)
+  granteeUserId       String?   @map("grantee_user_id") @db.Uuid
+  poaType             String    @map("poa_type") @db.VarChar(20)
+  issueDate           DateTime  @map("issue_date") @db.Date
+  expiryDate          DateTime? @map("expiry_date") @db.Date
+  notarizationNumber  String?   @map("notarization_number") @db.VarChar(100)
+  court               String?   @db.VarChar(255)
+  status              String    @default("active") @db.VarChar(20)
+  documentBlobPath    String?   @map("document_blob_path") @db.VarChar(500)
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  createdBy           String?   @map("created_by") @db.Uuid
+  updatedBy           String?   @map("updated_by") @db.Uuid
+
+  @@map("powers_of_attorney")
+  @@schema("tenant_default")
+}
+
+model AuditLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityType   String   @map("entity_type") @db.VarChar(50)
+  entityId     String   @map("entity_id") @db.Uuid
+  action       String   @db.VarChar(30)
+  fieldChanged String?  @map("field_changed") @db.VarChar(100)
+  oldValue     String?  @map("old_value")
+  newValue     String?  @map("new_value")
+  performedBy  String   @map("performed_by") @db.Uuid
+  performedAt  DateTime @default(now()) @map("performed_at")
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+
+  @@map("audit_log")
+  @@schema("tenant_default")
+}
+
+// ── Daleel – AI Research Chatbot ───────────────────────────
+
+model DaleelConversation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  matterId  String?  @map("matter_id") @db.Uuid
+  title     String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  messages DaleelMessage[]
+
+  @@map("daleel_conversations")
+  @@schema("tenant_default")
+}
+
+model DaleelMessage {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  role           String   @db.VarChar(20)
+  content        String
+  sources        Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation DaleelConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("daleel_messages")
+  @@schema("tenant_default")
+}
+
+model DaleelSyncLog {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sharepointItemId String   @map("sharepoint_item_id") @db.VarChar(255)
+  fileName         String   @map("file_name") @db.VarChar(500)
+  lastModified     DateTime @map("last_modified")
+  lastSyncedAt     DateTime @map("last_synced_at")
+  status           String   @db.VarChar(20)
+  chunkCount       Int      @default(0) @map("chunk_count")
+  error            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("daleel_sync_logs")
+  @@schema("public")
+}
