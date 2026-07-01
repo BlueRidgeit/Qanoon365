@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
@@ -9,8 +9,6 @@ import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/lib/auth';
 import {
   getMicrosoftAccount,
@@ -45,10 +43,6 @@ export default function LoginPage() {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isConfigured, setIsConfigured] = useState(isMicrosoftAuthConfigured());
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -138,32 +132,6 @@ export default function LoginPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t('microsoftError'));
       setIsLoading(false);
-    }
-  }
-
-  async function handlePasswordLogin(event: FormEvent) {
-    event.preventDefault();
-    setPasswordError(null);
-    setIsPasswordLoading(true);
-
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(body?.message || 'Invalid email or password.');
-      }
-
-      const data = (await res.json()) as { accessToken: string; refreshToken: string };
-      useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
-      router.replace(returnTo);
-    } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : 'Sign-in failed.');
-      setIsPasswordLoading(false);
     }
   }
 
@@ -269,71 +237,6 @@ export default function LoginPage() {
                   </>
                 )}
               </Button>
-
-              <div className="flex items-center gap-3 pt-1">
-                <div className="h-px flex-1 bg-[rgb(88_93_100_/_0.2)]" />
-                <span className="text-xs font-medium uppercase tracking-wide text-[#585d64]">
-                  or
-                </span>
-                <div className="h-px flex-1 bg-[rgb(88_93_100_/_0.2)]" />
-              </div>
-
-              <form onSubmit={handlePasswordLogin} className="flex flex-col gap-3">
-                <p className="text-center text-xs text-[#585d64]">
-                  Demo sign-in for accounts outside your Microsoft directory
-                </p>
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-[#32373c]">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="username"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="bladmin@albasti.dev"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-[#32373c]">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-
-                {passwordError && (
-                  <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-600">
-                    {passwordError}
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="lg"
-                  disabled={isPasswordLoading}
-                  className="mt-1 flex h-11 w-full items-center gap-2 text-sm font-semibold"
-                >
-                  {isPasswordLoading ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Signing in…
-                    </>
-                  ) : (
-                    'Sign in with email'
-                  )}
-                </Button>
-              </form>
             </div>
           </CardContent>
 
