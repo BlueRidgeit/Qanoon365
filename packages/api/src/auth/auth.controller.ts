@@ -9,13 +9,6 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password);
-  }
-
-  @Public()
   @Post('microsoft')
   @HttpCode(HttpStatus.OK)
   async microsoft(@Body() body: { accessToken: string }) {
@@ -25,7 +18,7 @@ export class AuthController {
   @Roles('admin')
   @Post('register')
   async register(
-    @Body() body: { email: string; password: string; firstName: string; lastName: string; role: string },
+    @Body() body: { email: string; password?: string; firstName: string; lastName: string; role: string },
     @CurrentUser('tenantId') tenantId: string,
   ) {
     return this.authService.register({ ...body, tenantId });

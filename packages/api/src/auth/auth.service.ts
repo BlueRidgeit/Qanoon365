@@ -23,7 +23,7 @@ export class AuthService {
 
   async register(dto: {
     email: string;
-    password: string;
+    password?: string;
     firstName: string;
     lastName: string;
     role: string;
@@ -34,7 +34,11 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    // Password is optional. Microsoft-provisioned users never sign in with a
+    // password, so store a random, unusable secret when none is supplied.
+    const rawPassword =
+      dto.password && dto.password.length > 0 ? dto.password : randomUUID();
+    const passwordHash = await bcrypt.hash(rawPassword, 10);
 
     const user = await this.prisma.user.create({
       data: {
@@ -47,41 +51,13 @@ export class AuthService {
       },
     });
 
-    return this.issueTokens(
-      user.id,
-      dto.tenantId,
-      user.role,
-      user.email,
-      user.firstName,
-      user.lastName,
-    );
-  }
-
-  async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Update last login
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
-
-    return this.issueTokens(
-      user.id,
-      user.tenantId,
-      user.role,
-      user.email,
-      user.firstName,
-      user.lastName,
-    );
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    };
   }
 
   async loginWithMicrosoft(accessToken: string) {
