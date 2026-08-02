@@ -10,8 +10,12 @@ async function bootstrap() {
   const port = config.get<number>('PORT', 3001);
 
   app.use(helmet());
+  // CORS_ORIGIN accepts a single origin or a comma-separated list of origins.
+  const corsOrigin = config.get<string>('CORS_ORIGIN', 'http://localhost:3000');
   app.enableCors({
-    origin: config.get<string>('CORS_ORIGIN', 'http://localhost:3000'),
+    origin: corsOrigin.includes(',')
+      ? corsOrigin.split(',').map((o) => o.trim()).filter(Boolean)
+      : corsOrigin,
     credentials: true,
   });
   app.setGlobalPrefix('api', { exclude: ['health'] });
