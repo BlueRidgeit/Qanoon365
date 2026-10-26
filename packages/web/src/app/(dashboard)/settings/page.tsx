@@ -401,19 +401,33 @@ function TeamTab() {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('lawyer');
   const [success, setSuccess] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [sendInvite, setSendInvite] = useState(true);
   const register = useRegister();
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setSuccess(null);
+    setWarning(null);
     try {
-      await register.mutateAsync({
+      const created = await register.mutateAsync({
         email: email.trim(),
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         role,
+        sendInvite,
       });
-      setSuccess(`${email.trim()} can now sign in with their Microsoft work account.`);
+      const base = `${email.trim()} can now sign in with their Microsoft work account.`;
+      if (created.invite?.status === 'sent') {
+        setSuccess(`${base} An invitation email was sent.`);
+      } else {
+        setSuccess(base);
+        if (created.invite?.status === 'not_configured') {
+          setWarning('No invitation email was sent: email is not set up yet.');
+        } else if (created.invite?.status === 'failed') {
+          setWarning(`The user was added, but the invitation email could not be sent: ${created.invite.error ?? 'unknown error'}`);
+        }
+      }
       setEmail('');
       setFirstName('');
       setLastName('');
@@ -491,6 +505,21 @@ function TeamTab() {
               {success}
             </div>
           )}
+          {warning && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700">
+              {warning}
+            </div>
+          )}
+
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={sendInvite}
+              onChange={(e) => setSendInvite(e.target.checked)}
+              className="size-4"
+            />
+            Send an invitation email
+          </label>
 
           <Button type="submit" disabled={register.isPending}>
             {register.isPending ? 'Adding…' : 'Add user'}

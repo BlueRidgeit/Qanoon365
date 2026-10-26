@@ -22,6 +22,7 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   role: string;
+  sendInvite?: boolean;
 }
 
 export interface RegisterResponse {
@@ -30,6 +31,7 @@ export interface RegisterResponse {
   firstName: string;
   lastName: string;
   role: string;
+  invite?: { status: 'sent' | 'not_configured' | 'failed' | 'skipped'; error?: string };
 }
 
 // Clients

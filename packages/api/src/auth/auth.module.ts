@@ -5,14 +5,17 @@ import { AuthService } from './auth.service.js';
 import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { MicrosoftTokenService } from './microsoft-token.service.js';
+import { InvitationService } from './invitation.service.js';
+import { BrandingModule } from '../branding/branding.module.js';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
+    BrandingModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, MicrosoftTokenService],
+  providers: [AuthService, JwtStrategy, MicrosoftTokenService, InvitationService],
   exports: [AuthService],
 })
 export class AuthModule {}
