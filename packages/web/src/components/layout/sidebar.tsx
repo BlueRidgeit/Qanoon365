@@ -202,6 +202,9 @@ export function Sidebar() {
 
   const displayRole = user?.role ? tr(user.role as 'admin' | 'partner' | 'compliance' | 'lawyer' | 'bd') : 'Member';
   const activeHref = getActiveHref(pathname);
+  // A custom wordmark logo replaces the icon + wordmark pair: show it alone, centred. (The icon
+  // still appears when the sidebar is collapsed, or when a custom icon is uploaded as well.)
+  const hideIcon = Boolean(brand.logos.sidebarWordmark) && !brand.logos.sidebarIcon;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -216,8 +219,15 @@ export function Sidebar() {
         {/* ----------------------------------------------------------------- */}
         {/* Logo / Wordmark                                                    */}
         {/* ----------------------------------------------------------------- */}
-          <div className={cn('flex items-center gap-3 px-4 py-3', collapsed && 'justify-center px-2')}>
+          <div
+            className={cn(
+              'flex items-center gap-3 px-4 py-3',
+              (collapsed || hideIcon) && 'justify-center',
+              collapsed && 'px-2',
+            )}
+          >
             {/* Logo image */}
+            {(!hideIcon || collapsed) && (
                     <div className="shrink-0 rounded-2xl bg-[#585d64] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
                       <Image
                         src={brand.logos.sidebarIcon ?? '/white-logo.png'}
@@ -229,6 +239,7 @@ export function Sidebar() {
                         className="object-contain"
                       />
                     </div>
+            )}
           {/* Wordmark — hidden when collapsed */}
           <div
             className={cn(
@@ -243,7 +254,7 @@ export function Sidebar() {
                         width={260}
                         height={96}
                         priority
-                        className="h-auto w-[150px] object-contain"
+                        className={cn('h-auto object-contain', hideIcon ? 'mx-auto w-[190px]' : 'w-[150px]')}
                       />
           </div>
         </div>
