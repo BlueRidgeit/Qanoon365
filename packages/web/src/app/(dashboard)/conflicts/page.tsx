@@ -536,7 +536,7 @@ export default function ConflictsPage() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
               {t('title')}
             </h1>
             {pendingCount > 0 && (

@@ -58,7 +58,7 @@ export default function ComplaintDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">{complaint.complaintNumber}</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-primary">{complaint.complaintNumber}</h1>
               <Badge variant="secondary" className={cn('border-0', STATUS_STYLES[complaint.status])}>
                 {t(`complaintStatuses.${complaint.status}`)}
               </Badge>

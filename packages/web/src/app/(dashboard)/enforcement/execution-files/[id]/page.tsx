@@ -71,7 +71,7 @@ export default function ExecutionFileDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">{file.fileNumber}</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-primary">{file.fileNumber}</h1>
               <Badge variant="secondary" className={cn('border-0', STATUS_STYLES[file.status])}>
                 {t(`executionStatuses.${file.status}`)}
               </Badge>

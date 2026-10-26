@@ -1275,7 +1275,7 @@ export default function OpportunityDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
               {opportunity.name}
             </h1>
             {stagePill(opportunity.stage)}

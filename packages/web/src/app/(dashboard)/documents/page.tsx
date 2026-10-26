@@ -447,7 +447,7 @@ export default function DocumentsPage() {
             <FileText className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">{t('title')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-primary">{t('title')}</h1>
             <p className="text-sm text-muted-foreground">
               {t('subtitle')}
             </p>

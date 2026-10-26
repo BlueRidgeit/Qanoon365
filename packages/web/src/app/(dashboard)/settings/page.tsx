@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useRegister } from '@/hooks/use-api';
+import { BrandingPanel } from '@/components/settings/branding-panel';
 
 // ---------------------------------------------------------------------------
 // Profile tab
@@ -515,7 +516,7 @@ export default function SettingsPage() {
           <Settings className="size-5 text-muted-foreground" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">{t('title')}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">{t('title')}</h1>
           <p className="text-sm text-muted-foreground">
             {t('subtitle')}
           </p>
@@ -542,6 +543,12 @@ export default function SettingsPage() {
               Team
             </TabsTrigger>
           )}
+          {isAdmin && (
+            <TabsTrigger value="branding" className="gap-1.5">
+              <Palette className="size-3.5" />
+              Branding
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile">
@@ -559,6 +566,12 @@ export default function SettingsPage() {
         {isAdmin && (
           <TabsContent value="team">
             <TeamTab />
+          </TabsContent>
+        )}
+
+        {isAdmin && (
+          <TabsContent value="branding">
+            <BrandingPanel />
           </TabsContent>
         )}
       </Tabs>

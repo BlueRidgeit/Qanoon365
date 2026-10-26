@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useBranding } from '@/components/branding-provider';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -36,6 +37,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const t = useTranslations('login');
+  const brand = useBranding();
   const requestedReturnTo = searchParams.get('returnTo') || '/';
   const returnTo = requestedReturnTo.startsWith('/') ? requestedReturnTo : '/';
 
@@ -136,7 +138,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#1c75bc] via-[#287fbe] to-[#f3f6f9] px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-(color:--login-mid) to-(color:--login-end) px-4">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
         style={{
@@ -147,8 +149,8 @@ export default function LoginPage() {
         }}
       />
 
-      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgb(28_117_188_/_0.14)] blur-[150px]" />
-      <div className="pointer-events-none absolute left-1/2 top-2/3 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgb(247_148_30_/_0.12)] blur-[120px]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-(color:--glow-1) blur-[150px]" />
+      <div className="pointer-events-none absolute left-1/2 top-2/3 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-(color:--glow-2) blur-[120px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -160,8 +162,9 @@ export default function LoginPage() {
           <CardHeader className="pb-3 pt-8">
             <div className="flex flex-col items-center gap-3 text-center">
               <Image
-                src="/login-screen-logo.png"
-                alt="Qanoon365"
+                src={brand.logos.loginIcon ?? '/login-screen-logo.png'}
+                alt={brand.appName ?? 'Qanoon365'}
+                unoptimized={Boolean(brand.logos.loginIcon)}
                 width={170}
                 height={170}
                 priority
@@ -169,8 +172,9 @@ export default function LoginPage() {
               />
 
               <Image
-                src="/logo-text-under.png"
-                alt={`${t('brandName')} ${t('brandDescriptor')}`}
+                src={brand.logos.loginWordmark ?? '/logo-text-under.png'}
+                alt={brand.appName ?? `${t('brandName')} ${t('brandDescriptor')}`}
+                unoptimized={Boolean(brand.logos.loginWordmark)}
                 width={420}
                 height={132}
                 priority
@@ -223,7 +227,7 @@ export default function LoginPage() {
                 size="lg"
                 disabled={isLoading || isBootstrapping || !isConfigured}
                 onClick={handleMicrosoftSignIn}
-                className="mt-1 flex h-11 w-full items-center gap-3 border border-[rgb(28_117_188_/_0.1)] bg-[#1c75bc] text-sm font-semibold tracking-wide text-white shadow-[0_16px_32px_rgba(28,117,188,0.28)] hover:bg-[#1668a9]"
+                className="mt-1 flex h-11 w-full items-center gap-3 border border-[rgb(28_117_188_/_0.1)] bg-primary text-sm font-semibold tracking-wide text-primary-foreground shadow-[0_16px_32px_rgba(28,117,188,0.28)] hover:bg-primary/90"
               >
                 {isLoading || isBootstrapping ? (
                   <>

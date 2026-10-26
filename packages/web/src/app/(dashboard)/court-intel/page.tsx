@@ -695,7 +695,7 @@ function CourtIntelPageContent({ context }: { context: CourtIntelPageContext }) 
             <Sparkles className="absolute -top-1 -right-1 size-3.5 text-gold animate-pulse" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
               {t('title')}
             </h1>
             <p className="text-sm text-muted-foreground">

@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter, Geist_Mono, Montserrat, Noto_Sans_Arabic } from 'next/font/google';
+import { Inter, Geist_Mono, Montserrat, Noto_Sans_Arabic, Tajawal } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { QueryProvider } from '@/providers/query-provider';
+import { BrandingProvider } from '@/components/branding-provider';
+import { buildThemeCss, logoSrc } from '@/lib/branding';
+import { getApiBase, getBranding } from '@/lib/branding-server';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
@@ -24,21 +27,32 @@ const montserrat = Montserrat({
   weight: ['500', '600', '700'],
 });
 
+// Optional font offered in Settings > Branding; only downloaded when it is selected.
+const tajawal = Tajawal({
+  variable: '--font-tajawal',
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '700'],
+  preload: false,
+});
+
 const notoArabic = Noto_Sans_Arabic({
   variable: '--font-arabic',
   subsets: ['arabic'],
   weight: ['400', '500', '600', '700'],
 });
 
-export const metadata: Metadata = {
-  title: 'Qanoon365 | Legal Intelligence Platform',
-  description: 'Qanoon365 — AI-Powered Legal Intelligence Platform — منصة الذكاء القانوني',
-  icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getBranding();
+  const icon = branding.logos.favicon
+    ? logoSrc(getApiBase(), 'favicon', branding.logos.favicon)
+    : '/favicon.png';
+  const name = branding.appName ?? 'Qanoon365';
+  return {
+    title: `${name} | Legal Intelligence Platform`,
+    description: `${name} — AI-Powered Legal Intelligence Platform — منصة الذكاء القانوني`,
+    icons: { icon, shortcut: icon, apple: icon },
+  };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +63,18 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const branding = await getBranding();
+  const themeCss = buildThemeCss(branding);
+  const apiBase = getApiBase();
+  const publicBranding = {
+    appName: branding.appName,
+    logos: Object.fromEntries(
+      (Object.entries(branding.logos) as Array<[keyof typeof branding.logos, number]>).map(([slot, version]) => [
+        slot,
+        logoSrc(apiBase, slot, version),
+      ]),
+    ),
+  };
   const qanoonRuntimePublicEnv = {
     nextPublicAzureTenantId: process.env.NEXT_PUBLIC_AZURE_TENANT_ID,
     nextPublicAzureClientId: process.env.NEXT_PUBLIC_AZURE_CLIENT_ID,
@@ -66,10 +92,13 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={locale === 'ar' ? 'rtl' : 'ltr'}
-      className="h-full"
+      className={`${inter.variable} ${tajawal.variable} ${geistMono.variable} ${montserrat.variable} ${notoArabic.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className={`${inter.variable} ${geistMono.variable} ${montserrat.variable} ${notoArabic.variable} h-full antialiased ${locale === 'ar' ? 'font-arabic' : ''}`}>
+      <head>
+        {themeCss ? <style id="branding-theme" dangerouslySetInnerHTML={{ __html: themeCss }} /> : null}
+      </head>
+      <body className={`${inter.variable} ${tajawal.variable} ${geistMono.variable} ${montserrat.variable} ${notoArabic.variable} h-full antialiased ${locale === 'ar' ? 'font-arabic' : ''}`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `window.__QANOON_PUBLIC_ENV__ = ${JSON.stringify(qanoonRuntimePublicEnv).replace(/</g, '\\u003c')};`,
@@ -83,10 +112,12 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <QueryProvider>
-              <TooltipProvider delayDuration={0}>
-                {children}
-                <Toaster richColors position={locale === 'ar' ? 'top-left' : 'top-right'} />
-              </TooltipProvider>
+              <BrandingProvider value={publicBranding}>
+                <TooltipProvider delayDuration={0}>
+                  {children}
+                  <Toaster richColors position={locale === 'ar' ? 'top-left' : 'top-right'} />
+                </TooltipProvider>
+              </BrandingProvider>
             </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

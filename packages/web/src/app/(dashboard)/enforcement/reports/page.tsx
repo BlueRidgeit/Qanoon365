@@ -24,7 +24,7 @@ export default function EnforcementReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">{t('reportsTitle')}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-primary">{t('reportsTitle')}</h1>
         <p className="text-muted-foreground">{t('reportsSubtitle')}</p>
       </div>
 

@@ -521,7 +521,7 @@ export default function TasksPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white font-heading">
+          <h1 className="text-3xl font-bold tracking-tight text-primary font-heading">
             Task Center
           </h1>
           <p className="max-w-3xl text-muted-foreground">
