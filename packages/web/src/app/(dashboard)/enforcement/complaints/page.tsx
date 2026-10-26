@@ -105,7 +105,7 @@ export default function ComplaintsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">{t('complaintsTitle')}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">{t('complaintsTitle')}</h1>
           <p className="text-muted-foreground">{t('complaintsSubtitle')}</p>
         </div>
         <Button variant="pink" onClick={() => setDialogOpen(true)}>

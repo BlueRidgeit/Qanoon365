@@ -119,7 +119,7 @@ export default function GuidePage() {
     <div className="space-y-8">
       {/* Page heading */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+        <h1 className="text-3xl font-bold tracking-tight text-primary">
           {t('title')}
         </h1>
         <p className="mt-1 text-muted-foreground">{t('subtitle')}</p>

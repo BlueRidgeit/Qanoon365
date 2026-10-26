@@ -499,7 +499,7 @@ export default function MatterDetailPage() {
           <p className="font-mono text-sm text-muted-foreground">
             {matter.matterNumber}
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">
             {matter.name}
           </h1>
           <Badge

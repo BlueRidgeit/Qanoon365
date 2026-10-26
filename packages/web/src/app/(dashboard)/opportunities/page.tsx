@@ -539,7 +539,7 @@ export default function OpportunitiesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-primary">
             {t('title')}
           </h1>
           <p className="text-muted-foreground">

@@ -500,7 +500,7 @@ export default function KycPage() {
             <FileCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary dark:text-white">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
               {t('title')}
             </h1>
             <div className="flex items-center gap-4 mt-1">
