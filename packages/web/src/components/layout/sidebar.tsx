@@ -50,6 +50,10 @@ import { Separator } from '@/components/ui/separator';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import Image from 'next/image';
 
+// When NEXT_PUBLIC_DALEEL_APP_URL is set at build time, the Daleel item opens the standalone
+// Daleel app directly in a new browser tab. Unset keeps the in-app /daleel landing page.
+const DALEEL_EXTERNAL_URL = process.env.NEXT_PUBLIC_DALEEL_APP_URL || '';
+
 // ---------------------------------------------------------------------------
 // Sidebar collapsed state store (shared with dashboard layout)
 // ---------------------------------------------------------------------------
@@ -270,9 +274,11 @@ export function Sidebar() {
                       ? (isRtl ? 'مركز المهام' : 'Task Center')
                       : t(item.labelKey as 'firmDashboard' | 'newEnquiries' | 'engagementPipeline' | 'activeMatters' | 'appealDeadlines' | 'clientDirectory' | 'counselContacts' | 'conflictChecks' | 'kycCompliance' | 'enforcementDashboard' | 'executionFiles' | 'criminalComplaints' | 'followUpSettings' | 'officeArchive' | 'aiConflictCheckEngine' | 'daleelChat' | 'documentVault' | 'firmSettings' | 'userGuide');
 
+                    const openExternal = item.href === '/daleel' && !!DALEEL_EXTERNAL_URL;
                     const linkContent = (
                       <Link
-                        href={item.href}
+                        href={openExternal ? DALEEL_EXTERNAL_URL : item.href}
+                        {...(openExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                         className={cn(
                           'group/item relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-all duration-200',
                           'hover:bg-sidebar-accent hover:text-white',
