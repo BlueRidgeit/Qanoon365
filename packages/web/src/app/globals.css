@@ -98,6 +98,13 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgb(255 255 255 / 0.18);
   --sidebar-ring: #f7941e;
+
+  /* Branding hooks: defaults reproduce the stock theme; Settings > Branding overrides them. */
+  --glow-1: rgb(28 117 188 / 0.14);
+  --glow-2: rgb(247 148 30 / 0.12);
+  --nav-muted: #dad9d9;
+  --login-mid: #287fbe;
+  --login-end: #f3f6f9;
 }
 
 .dark {
@@ -149,14 +156,14 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+    font-family: var(--app-font, var(--font-inter)), Arial, Helvetica, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   [dir="rtl"] body {
-    font-family: var(--font-arabic), var(--font-inter), Arial, Helvetica, sans-serif;
+    font-family: var(--app-font, var(--font-arabic)), var(--font-arabic), var(--font-inter), Arial, Helvetica, sans-serif;
   }
 
   [dir="rtl"] .aui-md,

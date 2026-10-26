@@ -49,6 +49,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import Image from 'next/image';
+import { useBranding } from '@/components/branding-provider';
 
 // ---------------------------------------------------------------------------
 // Sidebar collapsed state store (shared with dashboard layout)
@@ -172,6 +173,7 @@ export function Sidebar() {
   const { collapsed, toggle } = useSidebarStore();
   const { user, clearTokens } = useAuthStore();
   const { theme, setTheme } = useTheme();
+  const brand = useBranding();
   const t = useTranslations('nav');
   const tc = useTranslations('common');
   const tr = useTranslations('roles');
@@ -214,8 +216,9 @@ export function Sidebar() {
             {/* Logo image */}
                     <div className="shrink-0 rounded-2xl bg-[#585d64] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
                       <Image
-                        src="/white-logo.png"
-                        alt="Qanoon365"
+                        src={brand.logos.sidebarIcon ?? '/white-logo.png'}
+                        alt={brand.appName ?? 'Qanoon365'}
+                        unoptimized={Boolean(brand.logos.sidebarIcon)}
                         width={64}
                         height={64}
                         priority
@@ -230,8 +233,9 @@ export function Sidebar() {
             )}
           >
                       <Image
-                        src="/white-logo-text-under.png"
-                        alt="Qanoon365"
+                        src={brand.logos.sidebarWordmark ?? '/white-logo-text-under.png'}
+                        alt={brand.appName ?? 'Qanoon365'}
+                        unoptimized={Boolean(brand.logos.sidebarWordmark)}
                         width={260}
                         height={96}
                         priority
@@ -256,7 +260,7 @@ export function Sidebar() {
                     collapsed ? 'h-0 opacity-0' : 'h-5 opacity-100',
                   )}
                 >
-                    <span className="px-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#dad9d9]">
+                    <span className="px-2 text-sm font-semibold uppercase tracking-[0.18em] text-(color:--nav-muted)">
                     {t(section.titleKey as 'overview' | 'practice' | 'relationships' | 'compliance' | 'enforcement' | 'archive' | 'intelligence' | 'firmAdmin')}
                   </span>
                 </div>
@@ -275,10 +279,10 @@ export function Sidebar() {
                         href={item.href}
                         className={cn(
                           'group/item relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-all duration-200',
-                          'hover:bg-sidebar-accent hover:text-white',
+                          'hover:bg-sidebar-accent hover:text-sidebar-foreground',
                           active
-                            ? 'bg-white/14 text-white shadow-[0_12px_24px_rgba(12,70,117,0.18)]'
-                            : 'text-white',
+                            ? 'bg-sidebar-foreground/14 text-sidebar-foreground shadow-[0_12px_24px_rgba(12,70,117,0.18)]'
+                            : 'text-sidebar-foreground',
                         )}
                       >
                         {/* Active border indicator */}
@@ -292,14 +296,14 @@ export function Sidebar() {
                         <span
                           className={cn(
                             'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200',
-                            active ? 'bg-[#f7941e]/18 text-[#f7941e]' : 'text-white group-hover/item:text-white',
+                            active ? 'bg-sidebar-primary/18 text-sidebar-primary' : 'text-sidebar-foreground group-hover/item:text-sidebar-foreground',
                           )}
                         >
                           <Icon
                             fill={active ? 'currentColor' : 'none'}
                             className={cn(
                               'size-[18px] shrink-0 transition-colors duration-200',
-                              active ? 'text-[#f7941e]' : 'text-white',
+                              active ? 'text-sidebar-primary' : 'text-sidebar-foreground',
                             )}
                           />
                         </span>
@@ -378,10 +382,10 @@ export function Sidebar() {
                   collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100',
                 )}
               >
-                <p className="truncate text-sm font-medium text-white">
+                <p className="truncate text-sm font-medium text-sidebar-foreground">
                   {displayName}
                 </p>
-                <p className="truncate text-xs text-white/75">
+                <p className="truncate text-xs text-sidebar-foreground/75">
                   {displayRole}
                 </p>
               </div>
@@ -401,7 +405,7 @@ export function Sidebar() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="text-white/85 hover:text-[#f7941e]"
+                    className="text-sidebar-foreground/85 hover:text-sidebar-primary"
                   >
                     <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                     <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -423,7 +427,7 @@ export function Sidebar() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => void handleLogout()}
-                    className="text-white/85 hover:text-white"
+                    className="text-sidebar-foreground/85 hover:text-sidebar-foreground"
                   >
                     <LogOut className="size-4" />
                     <span className="sr-only">{tc('logOut')}</span>
@@ -444,7 +448,7 @@ export function Sidebar() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={toggle}
-                    className="text-white/85 hover:text-[#f7941e]"
+                    className="text-sidebar-foreground/85 hover:text-sidebar-primary"
                   >
                     {(collapsed ? !isRtl : isRtl) ? (
                       <ChevronRight className="size-4" />
