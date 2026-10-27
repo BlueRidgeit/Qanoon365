@@ -16,6 +16,6 @@ import { BrandingModule } from '../branding/branding.module.js';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, MicrosoftTokenService, InvitationService],
-  exports: [AuthService],
+  exports: [AuthService, InvitationService],
 })
 export class AuthModule {}

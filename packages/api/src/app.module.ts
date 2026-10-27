@@ -32,6 +32,7 @@ import { AppealDeadlinesModule } from './appeal-deadlines/appeal-deadlines.modul
 import { ArchiveModule } from './archive/archive.module.js';
 import { DaleelModule } from './daleel/daleel.module.js';
 import { BrandingModule } from './branding/branding.module.js';
+import { UsersModule } from './users/users.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
@@ -71,6 +72,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter.
     ArchiveModule,
     DaleelModule,
     BrandingModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [

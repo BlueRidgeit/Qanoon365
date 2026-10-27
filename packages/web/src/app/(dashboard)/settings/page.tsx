@@ -2,7 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Settings,
   User,
@@ -30,18 +30,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useRegister } from '@/hooks/use-api';
 import { BrandingPanel } from '@/components/settings/branding-panel';
+import { UsersPanel } from '@/components/settings/users-panel';
 
 // ---------------------------------------------------------------------------
 // Profile tab
@@ -387,149 +377,6 @@ function AboutTab() {
 // Team tab (admin only)
 // ---------------------------------------------------------------------------
 
-const TEAM_ROLES = [
-  { value: 'partner', label: 'Partner' },
-  { value: 'compliance', label: 'Compliance' },
-  { value: 'lawyer', label: 'Lawyer' },
-  { value: 'bd', label: 'Business Development' },
-  { value: 'admin', label: 'Admin' },
-];
-
-function TeamTab() {
-  const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState('lawyer');
-  const [success, setSuccess] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
-  const [sendInvite, setSendInvite] = useState(true);
-  const register = useRegister();
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setSuccess(null);
-    setWarning(null);
-    try {
-      const created = await register.mutateAsync({
-        email: email.trim(),
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        role,
-        sendInvite,
-      });
-      const base = `${email.trim()} can now sign in with their Microsoft work account.`;
-      if (created.invite?.status === 'sent') {
-        setSuccess(`${base} An invitation email was sent.`);
-      } else {
-        setSuccess(base);
-        if (created.invite?.status === 'not_configured') {
-          setWarning('No invitation email was sent: email is not set up yet.');
-        } else if (created.invite?.status === 'failed') {
-          setWarning(`The user was added, but the invitation email could not be sent: ${created.invite.error ?? 'unknown error'}`);
-        }
-      }
-      setEmail('');
-      setFirstName('');
-      setLastName('');
-      setRole('lawyer');
-    } catch {
-      // error is surfaced via register.error below
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base font-medium">Add user</CardTitle>
-        <CardDescription>
-          Grant a colleague access to Qanoon365. They sign in with their Microsoft
-          work account — no password is set here.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="max-w-md space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="nu-email">Work email</Label>
-            <Input
-              id="nu-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@yourfirm.com"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="nu-first">First name</Label>
-              <Input
-                id="nu-first"
-                required
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nu-last">Last name</Label>
-              <Input
-                id="nu-last"
-                required
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Role</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TEAM_ROLES.map((r) => (
-                  <SelectItem key={r.value} value={r.value}>
-                    {r.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {register.isError && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-600">
-              {(register.error as Error)?.message || 'Could not add the user.'}
-            </div>
-          )}
-          {success && (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700">
-              {success}
-            </div>
-          )}
-          {warning && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-700">
-              {warning}
-            </div>
-          )}
-
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={sendInvite}
-              onChange={(e) => setSendInvite(e.target.checked)}
-              className="size-4"
-            />
-            Send an invitation email
-          </label>
-
-          <Button type="submit" disabled={register.isPending}>
-            {register.isPending ? 'Adding…' : 'Add user'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
@@ -569,7 +416,7 @@ export default function SettingsPage() {
           {isAdmin && (
             <TabsTrigger value="team" className="gap-1.5">
               <UserPlus className="size-3.5" />
-              Team
+              Manage users
             </TabsTrigger>
           )}
           {isAdmin && (
@@ -594,7 +441,7 @@ export default function SettingsPage() {
 
         {isAdmin && (
           <TabsContent value="team">
-            <TeamTab />
+            <UsersPanel />
           </TabsContent>
         )}
 
